@@ -26,19 +26,31 @@ _URL_PATH = vol.All(cv.string, vol.Match(r"^[a-z0-9][a-z0-9_-]*$"))
 
 def _schema(values: dict[str, Any] | None = None) -> vol.Schema:
     values = values or {}
+
     return vol.Schema(
         {
             vol.Required(
                 CONF_PANEL_TITLE,
-                default=values.get(CONF_PANEL_TITLE, DEFAULT_PANEL_TITLE),
+                default=values.get(
+                    CONF_PANEL_TITLE,
+                    DEFAULT_PANEL_TITLE,
+                ),
             ): cv.string,
+
             vol.Required(
                 CONF_SIDEBAR_ICON,
-                default=values.get(CONF_SIDEBAR_ICON, DEFAULT_SIDEBAR_ICON),
-            ): cv.icon,
+                default=values.get(
+                    CONF_SIDEBAR_ICON,
+                    DEFAULT_SIDEBAR_ICON,
+                ),
+            ): cv.string,
+
             vol.Required(
                 CONF_URL_PATH,
-                default=values.get(CONF_URL_PATH, DEFAULT_URL_PATH),
+                default=values.get(
+                    CONF_URL_PATH,
+                    DEFAULT_URL_PATH,
+                ),
             ): _URL_PATH,
         }
     )
@@ -63,8 +75,8 @@ class ElectricalNetworkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Create the single local configuration entry."""
 
-        await self.async_set_unique_id(DOMAIN)
-        self._abort_if_unique_id_configured()
+        if self._async_current_entries():
+            return self.async_abort(reason="already_configured")
 
         if user_input is not None:
             return self.async_create_entry(
@@ -72,7 +84,10 @@ class ElectricalNetworkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data=user_input,
             )
 
-        return self.async_show_form(step_id="user", data_schema=_schema())
+        return self.async_show_form(
+            step_id="user",
+            data_schema=_schema(),
+        )
 
 
 class ElectricalNetworkOptionsFlow(OptionsFlowWithReload):
