@@ -1,0 +1,702 @@
+{
+  "schema_version": 1,
+  "title": "Электросхема дома",
+  "settings": {
+    "demo_mode": true,
+    "auto_save": true,
+    "allow_control": false,
+    "flow_threshold_w": 3.0,
+    "grid_size": 20,
+    "show_grid": true,
+    "show_phase_balance": true,
+    "summary_entities": {
+      "power": "",
+      "energy": "",
+      "current": "",
+      "voltage": "",
+      "frequency": ""
+    },
+    "summary_demo": {
+      "power": 3480.0,
+      "energy": 18.7,
+      "current": 15.2,
+      "voltage": 229.0,
+      "frequency": 50.0
+    }
+  },
+  "viewport": {
+    "x": 35.0,
+    "y": 20.0,
+    "zoom": 0.72
+  },
+  "nodes": [
+    {
+      "id": "grid",
+      "type": "source",
+      "name": "Сеть",
+      "description": "Ввод электросети",
+      "icon": "mdi:transmission-tower",
+      "x": 30.0,
+      "y": 245.0,
+      "w": 170.0,
+      "h": 150.0,
+      "phase": "all",
+      "nominal": "",
+      "parent_id": "",
+      "entities": {
+        "state": "",
+        "power": "sensor.grid_power",
+        "current": "sensor.grid_current",
+        "voltage": "sensor.grid_voltage",
+        "energy": "sensor.grid_energy_today",
+        "frequency": "sensor.grid_frequency",
+        "temperature": ""
+      },
+      "demo": {
+        "state": "on",
+        "power": 3480.0,
+        "current": 15.2,
+        "voltage": 229.0,
+        "energy": 18.7,
+        "frequency": 50.0
+      }
+    },
+    {
+      "id": "main_breaker",
+      "type": "breaker",
+      "name": "Вводной автомат",
+      "description": "Главный вводной автомат",
+      "icon": "mdi:electric-switch",
+      "x": 230.0,
+      "y": 255.0,
+      "w": 190.0,
+      "h": 130.0,
+      "phase": "all",
+      "nominal": "32 A",
+      "parent_id": "",
+      "entities": {
+        "state": "switch.main_breaker",
+        "power": "sensor.main_breaker_power",
+        "current": "sensor.main_breaker_current",
+        "voltage": "sensor.main_breaker_voltage",
+        "energy": "",
+        "frequency": "",
+        "temperature": "sensor.main_breaker_temperature"
+      },
+      "demo": {
+        "state": "on",
+        "power": 3480.0,
+        "current": 15.2,
+        "voltage": 229.0,
+        "temperature": 31.0
+      }
+    },
+    {
+      "id": "main_rcd",
+      "type": "rcd",
+      "name": "УЗО",
+      "description": "Главное устройство защитного отключения",
+      "icon": "mdi:shield-bolt",
+      "x": 450.0,
+      "y": 255.0,
+      "w": 190.0,
+      "h": 130.0,
+      "phase": "all",
+      "nominal": "40 A / 30 mA",
+      "parent_id": "",
+      "entities": {
+        "state": "switch.rcd_main",
+        "power": "sensor.rcd_main_power",
+        "current": "sensor.rcd_main_current",
+        "voltage": "sensor.rcd_main_voltage",
+        "energy": "",
+        "frequency": "",
+        "temperature": ""
+      },
+      "demo": {
+        "state": "on",
+        "power": 3480.0,
+        "current": 15.2,
+        "voltage": 229.0
+      }
+    },
+    {
+      "id": "main_board",
+      "type": "board",
+      "name": "Распределительный щит",
+      "description": "Основной распределительный щит дома",
+      "icon": "mdi:electric-switchboard",
+      "x": 680.0,
+      "y": 70.0,
+      "w": 400.0,
+      "h": 500.0,
+      "phase": "all",
+      "nominal": "",
+      "parent_id": "",
+      "entities": {
+        "state": "",
+        "power": "",
+        "current": "",
+        "voltage": "",
+        "energy": "",
+        "frequency": "",
+        "temperature": ""
+      },
+      "demo": {
+        "state": "on"
+      }
+    },
+    {
+      "id": "kitchen_breaker",
+      "type": "breaker",
+      "name": "Розетки кухни",
+      "description": "Силовые розетки на кухне",
+      "icon": "mdi:electric-switch",
+      "x": 710.0,
+      "y": 125.0,
+      "w": 340.0,
+      "h": 92.0,
+      "phase": "L1",
+      "nominal": "16 A",
+      "parent_id": "main_board",
+      "entities": {
+        "state": "switch.kitchen_breaker",
+        "power": "sensor.kitchen_breaker_power",
+        "current": "sensor.kitchen_breaker_current",
+        "voltage": "sensor.kitchen_breaker_voltage",
+        "energy": "sensor.kitchen_energy_today",
+        "frequency": "",
+        "temperature": "sensor.kitchen_breaker_temperature"
+      },
+      "demo": {
+        "state": "on",
+        "power": 1080.0,
+        "current": 4.8,
+        "voltage": 229.0,
+        "energy": 5.24,
+        "temperature": 32.0
+      }
+    },
+    {
+      "id": "lights_breaker",
+      "type": "breaker",
+      "name": "Освещение",
+      "description": "Освещение первого и второго этажа",
+      "icon": "mdi:electric-switch",
+      "x": 710.0,
+      "y": 235.0,
+      "w": 340.0,
+      "h": 92.0,
+      "phase": "L3",
+      "nominal": "10 A",
+      "parent_id": "main_board",
+      "entities": {
+        "state": "switch.lights_breaker",
+        "power": "sensor.lights_power",
+        "current": "sensor.lights_current",
+        "voltage": "sensor.lights_voltage",
+        "energy": "",
+        "frequency": "",
+        "temperature": ""
+      },
+      "demo": {
+        "state": "on",
+        "power": 260.0,
+        "current": 1.2,
+        "voltage": 229.0
+      }
+    },
+    {
+      "id": "boiler_breaker",
+      "type": "breaker",
+      "name": "Бойлер / санузел",
+      "description": "Бойлер и силовая группа санузла",
+      "icon": "mdi:electric-switch",
+      "x": 710.0,
+      "y": 345.0,
+      "w": 340.0,
+      "h": 92.0,
+      "phase": "L2",
+      "nominal": "20 A",
+      "parent_id": "main_board",
+      "entities": {
+        "state": "switch.boiler_breaker",
+        "power": "sensor.boiler_power",
+        "current": "sensor.boiler_current",
+        "voltage": "sensor.boiler_voltage",
+        "energy": "sensor.boiler_energy_today",
+        "frequency": "",
+        "temperature": "sensor.boiler_temperature"
+      },
+      "demo": {
+        "state": "on",
+        "power": 1530.0,
+        "current": 6.7,
+        "voltage": 229.0,
+        "energy": 7.8,
+        "temperature": 38.0
+      }
+    },
+    {
+      "id": "garage_feed_breaker",
+      "type": "breaker",
+      "name": "Питание щита гаража",
+      "description": "Отходящая линия на дополнительный щит",
+      "icon": "mdi:electric-switch",
+      "x": 710.0,
+      "y": 455.0,
+      "w": 340.0,
+      "h": 92.0,
+      "phase": "L1",
+      "nominal": "25 A",
+      "parent_id": "main_board",
+      "entities": {
+        "state": "switch.garage_feed_breaker",
+        "power": "sensor.garage_feed_power",
+        "current": "sensor.garage_feed_current",
+        "voltage": "sensor.garage_feed_voltage",
+        "energy": "",
+        "frequency": "",
+        "temperature": ""
+      },
+      "demo": {
+        "state": "on",
+        "power": 610.0,
+        "current": 2.7,
+        "voltage": 229.0
+      }
+    },
+    {
+      "id": "kitchen_socket",
+      "type": "load",
+      "name": "Розетка кухни",
+      "description": "Группа умных розеток кухни",
+      "icon": "mdi:power-socket-eu",
+      "x": 1160.0,
+      "y": 125.0,
+      "w": 210.0,
+      "h": 92.0,
+      "phase": "L1",
+      "nominal": "",
+      "parent_id": "",
+      "entities": {
+        "state": "switch.kitchen_socket",
+        "power": "sensor.kitchen_socket_power",
+        "current": "sensor.kitchen_socket_current",
+        "voltage": "sensor.kitchen_socket_voltage",
+        "energy": "sensor.kitchen_socket_energy_today",
+        "frequency": "",
+        "temperature": ""
+      },
+      "demo": {
+        "state": "on",
+        "power": 1080.0,
+        "current": 4.8,
+        "voltage": 229.0,
+        "energy": 5.24
+      }
+    },
+    {
+      "id": "house_lights",
+      "type": "load",
+      "name": "Люстры",
+      "description": "Освещение дома",
+      "icon": "mdi:ceiling-light",
+      "x": 1160.0,
+      "y": 235.0,
+      "w": 210.0,
+      "h": 92.0,
+      "phase": "L3",
+      "nominal": "",
+      "parent_id": "",
+      "entities": {
+        "state": "light.house_lights",
+        "power": "sensor.lights_power",
+        "current": "sensor.lights_current",
+        "voltage": "sensor.lights_voltage",
+        "energy": "",
+        "frequency": "",
+        "temperature": ""
+      },
+      "demo": {
+        "state": "on",
+        "power": 260.0,
+        "current": 1.2,
+        "voltage": 229.0
+      }
+    },
+    {
+      "id": "boiler",
+      "type": "load",
+      "name": "Бойлер",
+      "description": "Электрический бойлер",
+      "icon": "mdi:water-boiler",
+      "x": 1160.0,
+      "y": 345.0,
+      "w": 210.0,
+      "h": 92.0,
+      "phase": "L2",
+      "nominal": "",
+      "parent_id": "",
+      "entities": {
+        "state": "switch.boiler",
+        "power": "sensor.boiler_power",
+        "current": "sensor.boiler_current",
+        "voltage": "sensor.boiler_voltage",
+        "energy": "sensor.boiler_energy_today",
+        "frequency": "",
+        "temperature": "sensor.boiler_temperature"
+      },
+      "demo": {
+        "state": "on",
+        "power": 1530.0,
+        "current": 6.7,
+        "voltage": 229.0,
+        "energy": 7.8,
+        "temperature": 38.0
+      }
+    },
+    {
+      "id": "garage_board",
+      "type": "board",
+      "name": "Доп. щит / Гараж",
+      "description": "Распределительный щит гаража",
+      "icon": "mdi:electric-switchboard",
+      "x": 680.0,
+      "y": 600.0,
+      "w": 400.0,
+      "h": 260.0,
+      "phase": "all",
+      "nominal": "",
+      "parent_id": "",
+      "entities": {
+        "state": "switch.garage_board",
+        "power": "sensor.garage_feed_power",
+        "current": "sensor.garage_feed_current",
+        "voltage": "sensor.garage_feed_voltage",
+        "energy": "",
+        "frequency": "",
+        "temperature": ""
+      },
+      "demo": {
+        "state": "on",
+        "power": 610.0,
+        "current": 2.7,
+        "voltage": 229.0
+      }
+    },
+    {
+      "id": "garage_socket_breaker",
+      "type": "breaker",
+      "name": "Розетки гаража",
+      "description": "Силовые розетки гаража",
+      "icon": "mdi:electric-switch",
+      "x": 710.0,
+      "y": 655.0,
+      "w": 340.0,
+      "h": 82.0,
+      "phase": "L1",
+      "nominal": "16 A",
+      "parent_id": "garage_board",
+      "entities": {
+        "state": "switch.garage_sockets",
+        "power": "sensor.garage_socket_power",
+        "current": "sensor.garage_socket_current",
+        "voltage": "sensor.garage_socket_voltage",
+        "energy": "",
+        "frequency": "",
+        "temperature": ""
+      },
+      "demo": {
+        "state": "on",
+        "power": 610.0,
+        "current": 2.7,
+        "voltage": 229.0
+      }
+    },
+    {
+      "id": "garage_light_breaker",
+      "type": "breaker",
+      "name": "Свет гаража",
+      "description": "Освещение гаража",
+      "icon": "mdi:electric-switch",
+      "x": 710.0,
+      "y": 755.0,
+      "w": 340.0,
+      "h": 82.0,
+      "phase": "L3",
+      "nominal": "10 A",
+      "parent_id": "garage_board",
+      "entities": {
+        "state": "switch.garage_lights",
+        "power": "sensor.garage_light_power",
+        "current": "sensor.garage_light_current",
+        "voltage": "sensor.garage_light_voltage",
+        "energy": "",
+        "frequency": "",
+        "temperature": ""
+      },
+      "demo": {
+        "state": "off",
+        "power": 0.0,
+        "current": 0.0,
+        "voltage": 229.0
+      }
+    },
+    {
+      "id": "garage_sockets",
+      "type": "load",
+      "name": "Гараж",
+      "description": "Розетки и оборудование гаража",
+      "icon": "mdi:garage",
+      "x": 1160.0,
+      "y": 655.0,
+      "w": 210.0,
+      "h": 82.0,
+      "phase": "L1",
+      "nominal": "",
+      "parent_id": "",
+      "entities": {
+        "state": "switch.garage_sockets",
+        "power": "sensor.garage_socket_power",
+        "current": "sensor.garage_socket_current",
+        "voltage": "sensor.garage_socket_voltage",
+        "energy": "",
+        "frequency": "",
+        "temperature": ""
+      },
+      "demo": {
+        "state": "on",
+        "power": 610.0,
+        "current": 2.7,
+        "voltage": 229.0
+      }
+    },
+    {
+      "id": "garage_light",
+      "type": "load",
+      "name": "Свет гаража",
+      "description": "Светильники гаража",
+      "icon": "mdi:ceiling-light",
+      "x": 1160.0,
+      "y": 755.0,
+      "w": 210.0,
+      "h": 82.0,
+      "phase": "L3",
+      "nominal": "",
+      "parent_id": "",
+      "entities": {
+        "state": "light.garage",
+        "power": "sensor.garage_light_power",
+        "current": "sensor.garage_light_current",
+        "voltage": "sensor.garage_light_voltage",
+        "energy": "",
+        "frequency": "",
+        "temperature": ""
+      },
+      "demo": {
+        "state": "off",
+        "power": 0.0,
+        "current": 0.0,
+        "voltage": 229.0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_grid_main",
+      "source": "grid",
+      "target": "main_breaker",
+      "source_port": "right",
+      "target_port": "left",
+      "label": "Ввод",
+      "disabled": false,
+      "entities": {
+        "state": "",
+        "power": "sensor.grid_power"
+      }
+    },
+    {
+      "id": "edge_main_rcd",
+      "source": "main_breaker",
+      "target": "main_rcd",
+      "source_port": "right",
+      "target_port": "left",
+      "label": "",
+      "disabled": false,
+      "entities": {
+        "state": "",
+        "power": "sensor.main_breaker_power"
+      }
+    },
+    {
+      "id": "edge_rcd_board",
+      "source": "main_rcd",
+      "target": "main_board",
+      "source_port": "right",
+      "target_port": "left",
+      "label": "",
+      "disabled": false,
+      "entities": {
+        "state": "",
+        "power": "sensor.rcd_main_power"
+      }
+    },
+    {
+      "id": "edge_board_kitchen",
+      "source": "main_board",
+      "target": "kitchen_breaker",
+      "source_port": "auto",
+      "target_port": "left",
+      "label": "L1",
+      "disabled": false,
+      "entities": {
+        "state": "",
+        "power": "sensor.kitchen_breaker_power"
+      }
+    },
+    {
+      "id": "edge_kitchen_load",
+      "source": "kitchen_breaker",
+      "target": "kitchen_socket",
+      "source_port": "right",
+      "target_port": "left",
+      "label": "",
+      "disabled": false,
+      "entities": {
+        "state": "switch.kitchen_socket",
+        "power": "sensor.kitchen_socket_power"
+      }
+    },
+    {
+      "id": "edge_board_lights",
+      "source": "main_board",
+      "target": "lights_breaker",
+      "source_port": "auto",
+      "target_port": "left",
+      "label": "L3",
+      "disabled": false,
+      "entities": {
+        "state": "",
+        "power": "sensor.lights_power"
+      }
+    },
+    {
+      "id": "edge_lights_load",
+      "source": "lights_breaker",
+      "target": "house_lights",
+      "source_port": "right",
+      "target_port": "left",
+      "label": "",
+      "disabled": false,
+      "entities": {
+        "state": "light.house_lights",
+        "power": "sensor.lights_power"
+      }
+    },
+    {
+      "id": "edge_board_boiler",
+      "source": "main_board",
+      "target": "boiler_breaker",
+      "source_port": "auto",
+      "target_port": "left",
+      "label": "L2",
+      "disabled": false,
+      "entities": {
+        "state": "",
+        "power": "sensor.boiler_power"
+      }
+    },
+    {
+      "id": "edge_boiler_load",
+      "source": "boiler_breaker",
+      "target": "boiler",
+      "source_port": "right",
+      "target_port": "left",
+      "label": "",
+      "disabled": false,
+      "entities": {
+        "state": "switch.boiler",
+        "power": "sensor.boiler_power"
+      }
+    },
+    {
+      "id": "edge_board_garage_feed",
+      "source": "main_board",
+      "target": "garage_feed_breaker",
+      "source_port": "auto",
+      "target_port": "left",
+      "label": "L1",
+      "disabled": false,
+      "entities": {
+        "state": "",
+        "power": "sensor.garage_feed_power"
+      }
+    },
+    {
+      "id": "edge_garage_feed_board",
+      "source": "garage_feed_breaker",
+      "target": "garage_board",
+      "source_port": "bottom",
+      "target_port": "top",
+      "label": "Кабель на гараж",
+      "disabled": false,
+      "entities": {
+        "state": "switch.garage_feed_breaker",
+        "power": "sensor.garage_feed_power"
+      }
+    },
+    {
+      "id": "edge_garage_board_sockets",
+      "source": "garage_board",
+      "target": "garage_socket_breaker",
+      "source_port": "auto",
+      "target_port": "left",
+      "label": "L1",
+      "disabled": false,
+      "entities": {
+        "state": "",
+        "power": "sensor.garage_socket_power"
+      }
+    },
+    {
+      "id": "edge_garage_sockets_load",
+      "source": "garage_socket_breaker",
+      "target": "garage_sockets",
+      "source_port": "right",
+      "target_port": "left",
+      "label": "",
+      "disabled": false,
+      "entities": {
+        "state": "switch.garage_sockets",
+        "power": "sensor.garage_socket_power"
+      }
+    },
+    {
+      "id": "edge_garage_board_light",
+      "source": "garage_board",
+      "target": "garage_light_breaker",
+      "source_port": "auto",
+      "target_port": "left",
+      "label": "L3",
+      "disabled": false,
+      "entities": {
+        "state": "",
+        "power": "sensor.garage_light_power"
+      }
+    },
+    {
+      "id": "edge_garage_light_load",
+      "source": "garage_light_breaker",
+      "target": "garage_light",
+      "source_port": "right",
+      "target_port": "left",
+      "label": "",
+      "disabled": false,
+      "entities": {
+        "state": "light.garage",
+        "power": "sensor.garage_light_power"
+      }
+    }
+  ]
+}

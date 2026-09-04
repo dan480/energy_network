@@ -1,0 +1,15 @@
+{
+  "domain": "electrical_network",
+  "name": "Electrical Network Designer",
+  "version": "0.1.0",
+  "config_flow": true,
+  "single_config_entry": true,
+  "dependencies": [
+    "frontend",
+    "http",
+    "panel_custom",
+    "websocket_api"
+  ],
+  "integration_type": "service",
+  "iot_class": "calculated"
+}

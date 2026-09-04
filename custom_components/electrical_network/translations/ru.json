@@ -1,0 +1,41 @@
+{
+  "title": "Электросхема дома",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Создание панели электросети",
+        "description": "Добавляет визуальный редактор электросети в боковое меню Home Assistant.",
+        "data": {
+          "panel_title": "Название в меню",
+          "sidebar_icon": "Иконка в меню",
+          "url_path": "URL-путь"
+        },
+        "data_description": {
+          "panel_title": "Название страницы в боковом меню Home Assistant.",
+          "sidebar_icon": "Иконка Material Design в формате mdi:icon-name.",
+          "url_path": "Путь страницы после адреса Home Assistant, только строчные латинские символы."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Плагин электросети уже настроен."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Настройки панели",
+        "data": {
+          "panel_title": "Название в меню",
+          "sidebar_icon": "Иконка в меню",
+          "url_path": "URL-путь"
+        },
+        "data_description": {
+          "panel_title": "Название страницы в боковом меню Home Assistant.",
+          "sidebar_icon": "Иконка Material Design в формате mdi:icon-name.",
+          "url_path": "Путь страницы после адреса Home Assistant, только строчные латинские символы."
+        }
+      }
+    }
+  }
+}

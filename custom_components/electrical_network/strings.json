@@ -1,0 +1,41 @@
+{
+  "title": "Electrical Network Designer",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Create the electrical network panel",
+        "description": "Adds a visual electrical network editor to the Home Assistant sidebar.",
+        "data": {
+          "panel_title": "Sidebar title",
+          "sidebar_icon": "Sidebar icon",
+          "url_path": "URL path"
+        },
+        "data_description": {
+          "panel_title": "Name displayed in the Home Assistant sidebar.",
+          "sidebar_icon": "Material Design icon in mdi:icon-name format.",
+          "url_path": "Lowercase path used after the Home Assistant address."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Electrical Network Designer is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Panel settings",
+        "data": {
+          "panel_title": "Sidebar title",
+          "sidebar_icon": "Sidebar icon",
+          "url_path": "URL path"
+        },
+        "data_description": {
+          "panel_title": "Name displayed in the Home Assistant sidebar.",
+          "sidebar_icon": "Material Design icon in mdi:icon-name format.",
+          "url_path": "Lowercase path used after the Home Assistant address."
+        }
+      }
+    }
+  }
+}

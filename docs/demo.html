@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Electrical Network Designer — browser smoke test</title>
+  <style>
+    :root {
+      --primary-color: #3ea6ff;
+      --success-color: #45d483;
+      --warning-color: #ffb74d;
+      --error-color: #ff5f62;
+      --primary-background-color: #08111b;
+      --card-background-color: #111a24;
+      --divider-color: #334252;
+      --primary-text-color: #e7edf5;
+      --secondary-text-color: #9aa8b8;
+      --text-primary-color: #fff;
+      color-scheme: dark;
+      font-family: Inter, Roboto, system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #08111b; color: #e7edf5; }
+    #app { display: grid; grid-template-columns: 245px minmax(0, 1fr); width: 100%; height: 100%; }
+    .ha-sidebar { display: flex; flex-direction: column; background: #101820; border-right: 1px solid #263440; min-width: 0; }
+    .ha-brand { height: 68px; display: flex; align-items: center; gap: 11px; padding: 0 18px; border-bottom: 1px solid #2b3945; font-size: 20px; font-weight: 500; }
+    .ha-logo { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(145deg, #4db8ff, #1674cb); font-size: 16px; }
+    .ha-menu { padding: 14px 8px; display: flex; flex-direction: column; gap: 3px; overflow: auto; }
+    .ha-item { min-height: 44px; padding: 0 12px; border-radius: 8px; display: flex; align-items: center; gap: 13px; color: #d3dbe4; font-size: 14px; }
+    .ha-item .glyph { width: 22px; text-align: center; color: #9cabba; }
+    .ha-item.selected { background: rgba(62, 166, 255, .15); color: #58b4ff; }
+    .ha-item.selected .glyph { color: #58b4ff; }
+    .ha-spacer { flex: 1; }
+    .ha-user { padding: 17px; border-top: 1px solid #2b3945; display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: #10202d; background: #a9dcff; }
+    #panel-host { min-width: 0; min-height: 0; overflow: hidden; }
+    electrical-network-panel { width: 100%; height: 100%; min-width: 0; }
+    #smoke-status { position: fixed; left: -9999px; top: -9999px; }
+    @media (max-width: 900px) { #app { grid-template-columns: 1fr; } .ha-sidebar { display: none; } }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <aside class="ha-sidebar" aria-hidden="true">
+      <div class="ha-brand"><span class="ha-logo">⌂</span><span>Home Assistant</span></div>
+      <nav class="ha-menu">
+        <div class="ha-item"><span class="glyph">▦</span>Обзор</div>
+        <div class="ha-item"><span class="glyph">ϟ</span>Энергия</div>
+        <div class="ha-item"><span class="glyph">⌖</span>Карта</div>
+        <div class="ha-item"><span class="glyph">☷</span>Журнал событий</div>
+        <div class="ha-item"><span class="glyph">▥</span>История</div>
+        <div class="ha-item"><span class="glyph">▶</span>Медиа</div>
+        <div class="ha-item"><span class="glyph">⌁</span>HACS</div>
+        <div class="ha-item"><span class="glyph">›_</span>Терминал</div>
+        <div class="ha-item"><span class="glyph">Z</span>Zigbee2MQTT</div>
+        <div class="ha-item selected"><span class="glyph">⌘</span>Электросхема дома</div>
+      </nav>
+      <div class="ha-spacer"></div>
+      <div class="ha-user"><span class="avatar">A</span><span>Alex</span></div>
+    </aside>
+    <main id="panel-host"></main>
+  </div>
+  <output id="smoke-status">pending</output>
+
+  <script>
+    class MockHaIcon extends HTMLElement {
+      static get observedAttributes() { return ["icon"]; }
+      connectedCallback() { this.render(); }
+      attributeChangedCallback() { this.render(); }
+      render() {
+        const glyphs = {
+          "mdi:transmission-tower": "ϟ",
+          "mdi:electric-switch": "▯",
+          "mdi:shield-bolt": "⛨",
+          "mdi:electric-switchboard": "▦",
+          "mdi:meter-electric": "▤",
+          "mdi:source-branch": "⑂",
+          "mdi:power-socket-eu": "◉",
+          "mdi:power-plug": "⌁",
+          "mdi:ceiling-light": "◒",
+          "mdi:water-boiler": "♨",
+          "mdi:garage": "▱",
+          "mdi:lightbulb-outline": "◉",
+          "mdi:lightning-bolt": "ϟ",
+          "mdi:sine-wave": "∿",
+          "mdi:chart-histogram": "▥",
+          "mdi:information-outline": "ⓘ",
+          "mdi:plus": "+",
+          "mdi:pencil": "✎",
+          "mdi:check": "✓",
+          "mdi:content-save-outline": "▣",
+          "mdi:link-variant-plus": "⌁",
+          "mdi:fit-to-screen-outline": "⛶",
+          "mdi:magnify-plus-outline": "+",
+          "mdi:magnify-minus-outline": "−",
+          "mdi:dots-vertical": "⋮",
+          "mdi:close": "×",
+          "mdi:open-in-new": "↗",
+        };
+        this.textContent = glyphs[this.getAttribute("icon")] || "•";
+        Object.assign(this.style, {
+          display: "inline-grid",
+          placeItems: "center",
+          width: "var(--mdc-icon-size, 1.25em)",
+          height: "var(--mdc-icon-size, 1.25em)",
+          lineHeight: "1",
+          fontStyle: "normal",
+          flex: "0 0 auto",
+        });
+      }
+    }
+    customElements.define("ha-icon", MockHaIcon);
+  </script>
+
+  <script type="module">
+    const status = document.getElementById("smoke-status");
+    const clone = (value) => JSON.parse(JSON.stringify(value));
+    const waitFor = async (predicate, timeout = 5000) => {
+      const started = performance.now();
+      while (!predicate()) {
+        if (performance.now() - started > timeout) throw new Error("Timeout while waiting for the panel");
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+    };
+    const assert = (condition, message) => {
+      if (!condition) throw new Error(message);
+    };
+
+    try {
+      const defaultConfig = await fetch("../examples/demo_diagram.json").then((response) => {
+        if (!response.ok) throw new Error(`Cannot load demo JSON: ${response.status}`);
+        return response.json();
+      });
+      await import("../custom_components/electrical_network/frontend/electrical-network-panel.js");
+
+      const units = {
+        power: "W",
+        current: "A",
+        voltage: "V",
+        energy: "kWh",
+        frequency: "Hz",
+        temperature: "°C",
+      };
+      const states = {};
+      for (const node of defaultConfig.nodes) {
+        for (const [key, entityId] of Object.entries(node.entities || {})) {
+          if (!entityId) continue;
+          const value = key === "state" ? (node.demo?.state ?? "on") : (node.demo?.[key] ?? 0);
+          states[entityId] = {
+            entity_id: entityId,
+            state: String(value),
+            attributes: {
+              friendly_name: node.name,
+              ...(units[key] ? { unit_of_measurement: units[key] } : {}),
+            },
+          };
+        }
+      }
+
+      let revision = 1;
+      let storedConfig = clone(defaultConfig);
+      const hass = {
+        user: { id: "mock-admin", name: "Alex", is_admin: true },
+        states,
+        locale: { language: "ru", number_format: "comma_decimal" },
+        callWS: async (message) => {
+          if (message.type === "electrical_network/config/get") {
+            return { revision, config: clone(storedConfig) };
+          }
+          if (message.type === "electrical_network/config/save") {
+            if (message.revision !== revision) {
+              const error = new Error("Expected revision does not match current revision");
+              error.code = "revision_conflict";
+              throw error;
+            }
+            storedConfig = clone(message.config);
+            revision += 1;
+            return { revision, config: clone(storedConfig) };
+          }
+          if (message.type === "electrical_network/config/reset") {
+            storedConfig = clone(defaultConfig);
+            revision += 1;
+            return { revision, config: clone(storedConfig) };
+          }
+          throw new Error(`Unknown mock WebSocket command: ${message.type}`);
+        },
+        callService: async (domain, service, data) => {
+          const entityId = data?.entity_id;
+          if (states[entityId]) states[entityId].state = service === "turn_on" ? "on" : "off";
+          return { domain, service, data };
+        },
+      };
+
+      const panel = document.createElement("electrical-network-panel");
+      panel.panel = {
+        component_name: "custom",
+        url_path: "electrical-network",
+        config: { entry_id: "browser-smoke", panel_title: "Электросхема дома", version: "0.1.0" },
+      };
+      document.getElementById("panel-host").append(panel);
+      panel.hass = hass;
+      await waitFor(() => panel._loaded === true);
+
+      assert(panel._config.nodes.length === defaultConfig.nodes.length, "Node count mismatch");
+      assert(panel.shadowRoot.querySelectorAll("[data-node-id]").length === defaultConfig.nodes.length, "Nodes were not rendered");
+      assert(panel.shadowRoot.querySelectorAll("[data-edge-id]").length === defaultConfig.edges.length, "Edges were not rendered");
+      assert(!panel.shadowRoot.getElementById("edge-layer").innerHTML.includes("NaN"), "An SVG path contains NaN");
+      assert(panel._convertMetric(1.25, "kW", "power") === 1250, "kW conversion failed");
+      assert(panel._convertMetric(500, "mW", "power") === 0.5, "mW conversion failed");
+      assert(panel._convertMetric(2, "MW", "power") === 2000000, "MW conversion failed");
+      assert(panel._convertMetric(2500, "mA", "current") === 2.5, "mA conversion failed");
+      assert(panel._convertMetric(1500, "mWh", "energy") === 0.0015, "mWh conversion failed");
+      assert(!panel._roundedPath([{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 10, y: 0 }]).includes("NaN"), "Duplicate path point caused NaN");
+      assert(panel._nodeSupplied("garage_board") === true, "Downstream board should be supplied");
+      assert(panel.shadowRoot.querySelector('[data-node-id="main_breaker"]').classList.contains("compact"), "Compact standalone node layout was not applied");
+      panel._updateInspectorLive();
+      assert(panel.shadowRoot.querySelector(".inspector-heading .status-pill .dot"), "Live inspector refresh removed the status dot");
+      panel._closeInspector();
+      assert(panel.shadowRoot.getElementById("main-layout").classList.contains("inspector-closed"), "Desktop inspector did not collapse");
+      panel._selectNode("kitchen_breaker");
+      assert(!panel.shadowRoot.getElementById("main-layout").classList.contains("inspector-closed"), "Selecting a node did not reopen the inspector");
+
+      const adminViewport = clone(panel._config.viewport);
+      panel._dirty = false;
+      hass.user.is_admin = false;
+      const canvasRect = panel.shadowRoot.getElementById("canvas").getBoundingClientRect();
+      panel._setZoomAt(panel._config.viewport.zoom * 1.05, canvasRect.left + 100, canvasRect.top + 100);
+      assert(panel._dirty === false, "Read-only viewport navigation marked the document dirty");
+      hass.user.is_admin = true;
+      panel._config.viewport = adminViewport;
+      panel._applyViewport();
+
+      states["switch.garage_feed_breaker"].state = "off";
+      panel._clearLiveCaches();
+      assert(panel._nodeSupplied("garage_board") === false, "Upstream off state did not propagate");
+      states["switch.garage_feed_breaker"].state = "on";
+      panel._clearLiveCaches();
+
+      const beforeAutoLayout = clone(panel._config);
+      panel._config.settings.auto_save = false;
+      panel._autoLayout();
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const autoMainBoard = panel._nodeById.get("main_board");
+      const autoGarageBoard = panel._nodeById.get("garage_board");
+      const autoKitchenBreaker = panel._nodeById.get("kitchen_breaker");
+      const autoKitchenSocket = panel._nodeById.get("kitchen_socket");
+      assert(autoMainBoard.x === autoGarageBoard.x, "Auto-layout did not keep downstream boards in one lane");
+      assert(autoGarageBoard.y > autoMainBoard.y + autoMainBoard.h, "Auto-layout did not place the downstream board below its feeder");
+      assert(Math.abs((autoKitchenBreaker.y + autoKitchenBreaker.h / 2) - (autoKitchenSocket.y + autoKitchenSocket.h / 2)) < 1, "Auto-layout did not align a load with its breaker");
+      assert(panel._config.viewport.zoom > 0.45, "Auto-layout produced an unusably small diagram");
+      if (panel._saveTimer) clearTimeout(panel._saveTimer);
+      panel._saveTimer = null;
+      panel._config = beforeAutoLayout;
+      panel._dirty = false;
+      panel._saveStatus = "saved";
+      panel._rebuildGraphCache();
+      panel._renderAll();
+
+      const initialConfig = clone(panel._config);
+      panel._config.settings.auto_save = false;
+      panel._editing = true;
+      panel._renderToolbar();
+      const countBefore = panel._config.nodes.length;
+      panel._addNode("breaker");
+      assert(panel._config.nodes.length === countBefore + 1, "Adding a breaker failed");
+      assert(panel._dirty === true, "Editing did not mark the document dirty");
+      await panel._save();
+      assert(panel._dirty === false && revision === 2, "Saving through the WebSocket mock failed");
+
+      panel._config = clone(initialConfig);
+      panel._rebuildGraphCache();
+      panel._selectedNodeId = "main_board";
+      const typeInput = document.createElement("select");
+      typeInput.dataset.nodeField = "type";
+      typeInput.value = "load";
+      const changed = panel._handleEditorControl(typeInput);
+      assert(changed === false, "A board with children was converted to another type");
+      assert(panel._nodeById.get("main_board").type === "board", "Board type protection failed");
+
+      const imported = panel._normalizeImportedConfig({
+        ...initialConfig,
+        settings: {
+          allow_control: "true",
+          auto_save: false,
+          flow_threshold_w: "8",
+          grid_size: "30",
+          summary_entities: { power: null },
+          summary_demo: { voltage: "231.5" },
+        },
+      });
+      assert(imported.settings.allow_control === false, "Invalid boolean import was accepted");
+      assert(imported.settings.auto_save === false, "Valid boolean import was lost");
+      assert(imported.settings.flow_threshold_w === 8, "Numeric setting import failed");
+      assert(imported.settings.grid_size === 30, "Grid setting import failed");
+      assert(imported.settings.summary_demo.voltage === 231.5, "Summary demo import failed");
+      panel._clientValidateDiagram(imported);
+
+      panel._config = clone(defaultConfig);
+      panel._revision = 1;
+      panel._selectedNodeId = "kitchen_breaker";
+      panel._selectedEdgeId = null;
+      panel._editing = false;
+      panel._dirty = false;
+      panel._saveStatus = "saved";
+      panel._inspectorOpen = true;
+      panel._renderAll();
+      panel.shadowRoot.getElementById("loading").style.display = "none";
+
+      document.documentElement.dataset.testStatus = "pass";
+      status.textContent = "pass";
+      console.log("ELECTRICAL_NETWORK_SMOKE_PASS");
+    } catch (error) {
+      document.documentElement.dataset.testStatus = "fail";
+      status.textContent = `fail: ${error?.stack || error}`;
+      console.error("ELECTRICAL_NETWORK_SMOKE_FAIL", error);
+    }
+  </script>
+</body>
+</html>
