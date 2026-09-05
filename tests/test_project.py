@@ -40,6 +40,10 @@ def test_frontend_version_matches_manifest_and_has_no_remote_runtime_dependency(
     assert 'xmlns="http://www.w3.org/2000/svg"' in source
     assert "eval(" not in source
     assert 'customElements.define("electrical-network-panel"' in source
+    assert 'requestAnimationFrame(animate)' in source
+    assert 'data-action="add-node-menu"' in source
+    for node_type in ("inverter", "solar", "battery", "ground"):
+        assert f'{node_type}:' in source
 
 
 def test_translations_have_required_config_flow_keys() -> None:

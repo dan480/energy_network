@@ -1,4 +1,4 @@
-const ELECTRICAL_NETWORK_VERSION = "0.2.0";
+const ELECTRICAL_NETWORK_VERSION = "0.3.0";
 
 // [electrical-network-energy-v2] Energy/storage and PE nodes.
 const NODE_TYPE_META = {
@@ -13,6 +13,26 @@ const NODE_TYPE_META = {
   solar: { label: "Солнечные панели", icon: "mdi:solar-panel-large", w: 250, h: 132 },
   battery: { label: "Аккумулятор", icon: "mdi:battery-charging-high", w: 250, h: 132 },
   ground: { label: "Заземление", icon: "mdi:ground-wire", w: 190, h: 104 },
+};
+
+const NODE_TYPE_GROUPS = [
+  { title: "Электрика", types: ["source", "meter", "breaker", "rcd", "board", "load", "junction"] },
+  { title: "Энергия", types: ["solar", "inverter", "battery"] },
+  { title: "Защита", types: ["ground"] },
+];
+
+const NODE_TYPE_DESCRIPTIONS = {
+  source: "Ввод электросети или другой источник AC",
+  meter: "Счётчик / измерительный узел",
+  breaker: "Автомат, в том числе полностью механический",
+  rcd: "УЗО или дифференциальный автомат",
+  board: "Распределительный щит с дочерними аппаратами",
+  load: "Розетка, свет, бойлер или любой потребитель",
+  junction: "Точка разветвления или соединения",
+  solar: "PV-массив: мощность, ток, напряжение, энергия",
+  inverter: "Инвертор: вход/выход, напряжение, частота",
+  battery: "АКБ: SoC, заряд, разряд, мощность, напряжение",
+  ground: "PE / защитное заземление в выбранной точке",
 };
 
 const ENTITY_KEYS = [
@@ -201,16 +221,17 @@ const PANEL_STYLES = `
   .node-layer { z-index: 3; }
   .wire-glow { fill: none; stroke: rgba(var(--en-accent-rgb), .22); stroke-width: 12; filter: blur(5px); opacity: 0; }
   .wire-base { fill: none; stroke: #5e6a79; stroke-width: 3; vector-effect: non-scaling-stroke; transition: stroke .25s, opacity .25s; }
-  .wire-runner { fill: var(--en-accent); opacity: 0; pointer-events: none; filter: drop-shadow(0 0 7px rgba(var(--en-accent-rgb), .95)); }
+  .wire-runner { fill: var(--en-accent); opacity: 0; pointer-events: none; filter: drop-shadow(0 0 9px rgba(var(--en-accent-rgb), 1)); }
   .edge.energized .wire-base { stroke: color-mix(in srgb, var(--en-accent) 78%, #b6dfff); }
   .edge.energized .wire-glow { opacity: .85; }
   .edge.flowing .wire-runner { opacity: 1; }
+  .edge.flowing .wire-base { stroke-width: 3.4; }
   .edge.off .wire-base { stroke: #56606d; stroke-dasharray: 5 8; opacity: .72; }
   .edge.unavailable .wire-base { stroke: var(--en-warning); stroke-dasharray: 3 8; opacity: .75; }
   .edge.selected .wire-base { stroke-width: 5; stroke: var(--en-accent); }
   .edge-hit { fill: none; stroke: transparent; stroke-width: 22; pointer-events: stroke; cursor: pointer; vector-effect: non-scaling-stroke; }
   .edge-label { fill: var(--en-muted); font-size: 12px; paint-order: stroke; stroke: var(--en-bg); stroke-width: 5px; stroke-linejoin: round; pointer-events: none; }
-  @media (prefers-reduced-motion: reduce) { .wire-runner { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .wire-runner { filter: drop-shadow(0 0 6px rgba(var(--en-accent-rgb), .85)); } }
   .diagram-node {
     position: absolute;
     border: 1px solid color-mix(in srgb, var(--en-border) 88%, transparent);
@@ -351,11 +372,18 @@ const PANEL_STYLES = `
   .modal-body { padding: 16px 17px; }
   .modal-foot { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 13px 17px 16px; border-top: 1px solid var(--en-border); }
   .modal textarea { width: 100%; min-height: 390px; resize: vertical; border: 1px solid var(--en-border); border-radius: 9px; padding: 11px; color: var(--en-text); background: var(--en-bg); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; outline: none; }
-  .modal .node-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
-  .node-type-option { min-height: 90px; display: grid; place-items: center; gap: 7px; border: 1px solid var(--en-border); border-radius: 11px; background: color-mix(in srgb, var(--en-bg) 70%, transparent); cursor: pointer; }
-  .node-type-option:hover { border-color: var(--en-accent); background: rgba(var(--en-accent-rgb), .08); }
-  .node-type-option ha-icon { color: var(--en-accent); --mdc-icon-size: 28px; }
-  .node-type-option span { font-size: 12px; }
+  .modal .node-type-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+  .node-type-group + .node-type-group { margin-top: 18px; }
+  .node-type-group-title { margin: 0 0 8px; color: var(--en-muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .node-type-option { min-height: 112px; display: grid; grid-template-columns: 38px minmax(0,1fr); grid-template-rows: auto auto; align-items: center; column-gap: 10px; row-gap: 3px; text-align: left; padding: 12px; border: 1px solid var(--en-border); border-radius: 12px; background: linear-gradient(145deg, color-mix(in srgb, var(--en-bg) 74%, transparent), color-mix(in srgb, var(--en-panel-2) 86%, transparent)); cursor: pointer; }
+  .node-type-option:hover { border-color: var(--en-accent); background: rgba(var(--en-accent-rgb), .08); transform: translateY(-1px); }
+  .node-type-option ha-icon { grid-row: 1 / -1; color: var(--en-accent); --mdc-icon-size: 30px; }
+  .node-type-option strong { font-size: 12.5px; }
+  .node-type-option small { color: var(--en-muted); font-size: 10px; line-height: 1.35; }
+  .type-inverter, .type-solar, .type-battery { border-color: color-mix(in srgb, var(--en-accent) 32%, var(--en-border)); }
+  .type-inverter .node-icon, .type-solar .node-icon, .type-battery .node-icon { border-radius: 12px; }
+  .type-ground .node-icon { border-radius: 10px; }
+  .add-node-main { box-shadow: 0 0 0 1px rgba(var(--en-accent-rgb), .12), 0 7px 20px rgba(var(--en-accent-rgb), .12); }
   .readonly-note { margin-left: auto; color: var(--en-warning); font-size: 11px; }
   @media (max-width: 1180px) {
     .main-layout { --en-inspector-width: 320px; }
@@ -368,8 +396,10 @@ const PANEL_STYLES = `
     .topbar { min-height: 64px; padding: 10px 12px; }
     h1 { font-size: 20px; }
     .title-block { min-width: 0; }
-    .version { display: none; }
-    .toolbar .btn.secondary-action { display: none; }
+    .version { display: block; font-size: 9px; opacity: .72; }
+    .toolbar .btn.secondary-action:not([data-action="add-node-menu"]) { display: none; }
+    .toolbar .btn[data-action="add-node-menu"] .btn-text { display: inline; }
+    .toolbar .btn[data-action="add-board"], .toolbar .btn[data-action="add-breaker"] { display: none; }
     .main-layout { --en-inspector-width: 0px; grid-template-columns: 1fr; position: relative; }
     .main-layout.inspector-closed .inspector { visibility: visible; width: min(360px, 92vw); border-left: 1px solid var(--en-border); overflow-y: auto; }
     .workbench { padding: 9px; }
@@ -421,6 +451,7 @@ class ElectricalNetworkPanel extends HTMLElement {
     this._boundKeydown = (event) => this._onKeydown(event);
     this._boundKeyup = (event) => this._onKeyup(event);
     this._spaceDown = false;
+    this._flowFrame = null;
   }
 
   set hass(value) {
@@ -471,6 +502,8 @@ class ElectricalNetworkPanel extends HTMLElement {
     else if (this._saveTimer) clearTimeout(this._saveTimer);
     if (this._toastTimer) clearTimeout(this._toastTimer);
     if (this._liveFrame) cancelAnimationFrame(this._liveFrame);
+    if (this._flowFrame) cancelAnimationFrame(this._flowFrame);
+    this._flowFrame = null;
     this._drag = null;
     this._pan = null;
   }
@@ -606,14 +639,14 @@ class ElectricalNetworkPanel extends HTMLElement {
     const admin = this._isAdmin();
     const disabled = admin ? "" : "disabled";
     toolbar.innerHTML = `
-      <button class="btn primary" data-action="add-board" ${disabled} title="Добавить распределительный щит">
+      <button class="btn" data-action="add-board" ${disabled} title="Добавить распределительный щит">
         <ha-icon icon="mdi:plus"></ha-icon><span class="btn-text">Добавить щит</span>
       </button>
       <button class="btn" data-action="add-breaker" ${disabled} title="Добавить автоматический выключатель">
         <ha-icon icon="mdi:electric-switch"></ha-icon><span class="btn-text">Добавить автомат</span>
       </button>
-      <button class="btn secondary-action" data-action="add-node-menu" ${disabled} title="Добавить другой тип узла">
-        <ha-icon icon="mdi:shape-square-rounded-plus"></ha-icon><span class="btn-text hide-mid">Добавить узел</span>
+      <button class="btn primary add-node-main" data-action="add-node-menu" ${disabled} title="Добавить другой тип узла">
+        <ha-icon icon="mdi:plus-circle-outline"></ha-icon><span class="btn-text">Добавить узел</span>
       </button>
       <button class="btn ${this._connectMode ? "active" : ""}" data-action="connect" ${disabled || !this._editing ? "disabled" : ""} title="Соединить два узла">
         <ha-icon icon="mdi:link-variant-plus"></ha-icon><span class="btn-text hide-mid">Связать</span>
@@ -1245,11 +1278,38 @@ class ElectricalNetworkPanel extends HTMLElement {
         <g class="${classes}" data-edge-group="${escapeHtml(edge.id)}">
           <path class="wire-glow" d="${geometry.path}"></path>
           <path class="wire-base" d="${geometry.path}"></path>
-          ${status.flowing ? `<circle class="wire-runner" r="5"><animateMotion dur="${round(duration, 2)}s" repeatCount="indefinite" path="${geometry.path}"></animateMotion></circle>` : ""}
+          ${status.flowing ? `<circle class="wire-runner" r="5.5" data-flow-duration="${round(duration, 3)}" data-flow-direction="${status.power < 0 ? -1 : 1}"></circle>` : ""}
           ${label}
           <path class="edge-hit" data-edge-id="${escapeHtml(edge.id)}" d="${geometry.path}"></path>
         </g>`;
     }).join("");
+    this._ensureFlowAnimation();
+  }
+
+  _ensureFlowAnimation() {
+    if (this._flowFrame || !this.isConnected) return;
+    const animate = (timestamp) => {
+      this._flowFrame = null;
+      if (!this.isConnected) return;
+      const runners = this.shadowRoot?.querySelectorAll(".edge.flowing .wire-runner") || [];
+      for (const runner of runners) {
+        const path = runner.parentElement?.querySelector(".wire-base");
+        if (!path || typeof path.getTotalLength !== "function") continue;
+        let length = 0;
+        try { length = path.getTotalLength(); } catch (_error) { continue; }
+        if (!Number.isFinite(length) || length <= 0) continue;
+        const duration = Math.max(.25, Number(runner.dataset.flowDuration) || 2.5) * 1000;
+        const direction = Number(runner.dataset.flowDirection) < 0 ? -1 : 1;
+        let progress = (timestamp % duration) / duration;
+        if (direction < 0) progress = 1 - progress;
+        let point;
+        try { point = path.getPointAtLength(length * progress); } catch (_error) { continue; }
+        runner.setAttribute("cx", round(point.x, 2));
+        runner.setAttribute("cy", round(point.y, 2));
+      }
+      if (runners.length) this._flowFrame = requestAnimationFrame(animate);
+    };
+    this._flowFrame = requestAnimationFrame(animate);
   }
 
   _statusLabel(status) {
@@ -1897,17 +1957,22 @@ class ElectricalNetworkPanel extends HTMLElement {
   }
 
   _showNodeTypeModal() {
-    const options = Object.entries(NODE_TYPE_META)
-      .map(([type, meta]) => `
-        <button class="node-type-option" data-action="add-node-type" data-node-type="${type}">
-          <ha-icon icon="${escapeHtml(meta.icon)}"></ha-icon>
-          <span>${escapeHtml(meta.label)}</span>
-        </button>`)
-      .join("");
+    const groups = NODE_TYPE_GROUPS.map((group) => {
+      const options = group.types.map((type) => {
+        const meta = NODE_TYPE_META[type];
+        return `
+          <button class="node-type-option" data-action="add-node-type" data-node-type="${type}">
+            <ha-icon icon="${escapeHtml(meta.icon)}"></ha-icon>
+            <strong>${escapeHtml(meta.label)}</strong>
+            <small>${escapeHtml(NODE_TYPE_DESCRIPTIONS[type] || "")}</small>
+          </button>`;
+      }).join("");
+      return `<section class="node-type-group"><h4 class="node-type-group-title">${escapeHtml(group.title)}</h4><div class="node-type-grid">${options}</div></section>`;
+    }).join("");
     this._openModal(
-      "Добавить узел",
-      `<div class="node-type-grid">${options}</div>
-       <div class="warning-box" style="margin-top:14px">Щит — контейнер для аппаратов. Механический автомат может работать без сущностей: нагрузка определяется по downstream-цепи. Инвертор, солнечные панели и аккумулятор имеют специализированные поля. Заземление — топологическая точка без обязательной сущности.</div>`
+      "Добавить элемент схемы",
+      `${groups}
+       <div class="warning-box" style="margin-top:16px">Механический автомат и УЗО не требуют Home Assistant entity: если за ними есть активная нагрузка, мощность и состояние потока вычисляются по downstream-цепи. PE-заземление — структурная точка без обязательной сущности.</div>`
     );
   }
 
