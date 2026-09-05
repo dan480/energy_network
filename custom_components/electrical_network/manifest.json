@@ -1,7 +1,7 @@
 {
   "domain": "electrical_network",
   "name": "Electrical Network Designer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "config_flow": true,
   "single_config_entry": true,
   "dependencies": [

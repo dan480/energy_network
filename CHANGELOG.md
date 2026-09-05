@@ -1,3 +1,10 @@
+## 0.2.0
+
+- [ADD] Inverter, solar, battery and grounding nodes.
+- [ADD] SoC and directional power mappings for energy nodes.
+- [IMP] Single animated power-flow point; speed scales with load up to 10 kW.
+- [IMP] Entity-less mechanical breakers inherit downstream load state.
+
 # Changelog
 
 ## 0.1.0 — 2026-09-03

@@ -1,5 +1,6 @@
-const ELECTRICAL_NETWORK_VERSION = "0.1.0";
+const ELECTRICAL_NETWORK_VERSION = "0.2.0";
 
+// [electrical-network-energy-v2] Energy/storage and PE nodes.
 const NODE_TYPE_META = {
   source: { label: "Ввод", icon: "mdi:transmission-tower", w: 180, h: 164 },
   breaker: { label: "Автомат", icon: "mdi:electric-switch", w: 240, h: 126 },
@@ -8,16 +9,27 @@ const NODE_TYPE_META = {
   load: { label: "Потребитель", icon: "mdi:power-plug", w: 225, h: 118 },
   meter: { label: "Счётчик", icon: "mdi:meter-electric", w: 220, h: 140 },
   junction: { label: "Соединение", icon: "mdi:source-branch", w: 150, h: 96 },
+  inverter: { label: "Инвертор", icon: "mdi:solar-power-variant", w: 250, h: 132 },
+  solar: { label: "Солнечные панели", icon: "mdi:solar-panel-large", w: 250, h: 132 },
+  battery: { label: "Аккумулятор", icon: "mdi:battery-charging-high", w: 250, h: 132 },
+  ground: { label: "Заземление", icon: "mdi:ground-wire", w: 190, h: 104 },
 };
 
-const ENTITY_KEYS = ["state", "power", "current", "voltage", "energy", "frequency", "temperature"];
+const ENTITY_KEYS = [
+  "state", "power", "current", "voltage", "energy", "frequency", "temperature",
+  "soc", "input_power", "output_power", "charge_power", "discharge_power",
+];
 const METRIC_LABELS = {
-  power: "Мощность",
-  current: "Ток",
-  voltage: "Напряжение",
-  energy: "Энергия сегодня",
-  frequency: "Частота",
-  temperature: "Температура",
+  state: "Состояние", power: "Мощность", current: "Ток", voltage: "Напряжение",
+  energy: "Энергия сегодня", frequency: "Частота", temperature: "Температура",
+  soc: "Заряд батареи (SoC)", input_power: "Входная мощность", output_power: "Выходная мощность",
+  charge_power: "Мощность заряда", discharge_power: "Мощность разряда",
+};
+const NODE_ENTITY_KEYS = {
+  inverter: ["state", "input_power", "output_power", "current", "voltage", "energy", "frequency", "temperature"],
+  solar: ["state", "power", "current", "voltage", "energy", "temperature"],
+  battery: ["state", "power", "current", "voltage", "soc", "charge_power", "discharge_power", "energy", "temperature"],
+  ground: [],
 };
 const OFF_STATES = new Set(["off", "closed", "idle", "standby", "not_home", "0", "false"]);
 const UNAVAILABLE_STATES = new Set(["unavailable", "unknown", "none", ""]);
@@ -189,17 +201,16 @@ const PANEL_STYLES = `
   .node-layer { z-index: 3; }
   .wire-glow { fill: none; stroke: rgba(var(--en-accent-rgb), .22); stroke-width: 12; filter: blur(5px); opacity: 0; }
   .wire-base { fill: none; stroke: #5e6a79; stroke-width: 3; vector-effect: non-scaling-stroke; transition: stroke .25s, opacity .25s; }
-  .wire-dots { fill: none; stroke: var(--en-accent); stroke-width: 5; stroke-linecap: round; stroke-dasharray: .1 15; vector-effect: non-scaling-stroke; opacity: 0; filter: drop-shadow(0 0 5px rgba(var(--en-accent-rgb), .85)); animation: en-flow var(--flow-duration, 1.8s) linear infinite; }
+  .wire-runner { fill: var(--en-accent); opacity: 0; pointer-events: none; filter: drop-shadow(0 0 7px rgba(var(--en-accent-rgb), .95)); }
   .edge.energized .wire-base { stroke: color-mix(in srgb, var(--en-accent) 78%, #b6dfff); }
   .edge.energized .wire-glow { opacity: .85; }
-  .edge.flowing .wire-dots { opacity: 1; }
+  .edge.flowing .wire-runner { opacity: 1; }
   .edge.off .wire-base { stroke: #56606d; stroke-dasharray: 5 8; opacity: .72; }
   .edge.unavailable .wire-base { stroke: var(--en-warning); stroke-dasharray: 3 8; opacity: .75; }
   .edge.selected .wire-base { stroke-width: 5; stroke: var(--en-accent); }
   .edge-hit { fill: none; stroke: transparent; stroke-width: 22; pointer-events: stroke; cursor: pointer; vector-effect: non-scaling-stroke; }
   .edge-label { fill: var(--en-muted); font-size: 12px; paint-order: stroke; stroke: var(--en-bg); stroke-width: 5px; stroke-linejoin: round; pointer-events: none; }
-  @keyframes en-flow { to { stroke-dashoffset: -60; } }
-  @media (prefers-reduced-motion: reduce) { .wire-dots { animation: none; stroke-dasharray: 3 12; } }
+  @media (prefers-reduced-motion: reduce) { .wire-runner { display: none; } }
   .diagram-node {
     position: absolute;
     border: 1px solid color-mix(in srgb, var(--en-border) 88%, transparent);
@@ -703,13 +714,14 @@ class ElectricalNetworkPanel extends HTMLElement {
     if (value == null) return null;
     const rawUnit = String(unit || "").trim().replaceAll(" ", "");
     const normalizedUnit = rawUnit.toLowerCase();
-    if (key === "power") {
+    if (["power", "input_power", "output_power", "charge_power", "discharge_power"].includes(key)) {
       if (rawUnit === "mW") return value / 1000;
       if (rawUnit === "MW") return value * 1000000;
       if (["kw", "квт"].includes(normalizedUnit)) return value * 1000;
       if (["мвт"].includes(normalizedUnit)) return value * 1000000;
       return value;
     }
+    if (key === "soc") return value;
     if (key === "current") {
       if (rawUnit === "mA") return value / 1000;
       if (["ma", "ма"].includes(normalizedUnit)) return value / 1000;
@@ -747,8 +759,14 @@ class ElectricalNetworkPanel extends HTMLElement {
     if (!node) return null;
     const cacheKey = `${node.id}:${key}`;
     if (this._metricCache.has(cacheKey)) return this._metricCache.get(cacheKey);
-    const entityId = node.entities?.[key] || "";
+    let entityId = node.entities?.[key] || "";
+    if (!entityId && key === "power" && node.type === "inverter") entityId = node.entities?.output_power || "";
     let value = this._metricFromEntity(entityId, key);
+    if (value == null && key === "power" && node.type === "battery") {
+      const discharge = this._metricFromEntity(node.entities?.discharge_power || "", "discharge_power");
+      const charge = this._metricFromEntity(node.entities?.charge_power || "", "charge_power");
+      if (discharge != null || charge != null) value = (discharge || 0) - (charge || 0);
+    }
     if (value == null && this._config.settings?.demo_mode && node.demo?.[key] != null) {
       value = Number(node.demo[key]);
     }
@@ -843,11 +861,12 @@ class ElectricalNetworkPanel extends HTMLElement {
   _formatMetric(value, key, compact = false) {
     if (value == null || !Number.isFinite(Number(value))) return "—";
     const number = Number(value);
-    if (key === "power") {
+    if (["power", "input_power", "output_power", "charge_power", "discharge_power"].includes(key)) {
       if (Math.abs(number) >= 1000000) return `${round(number / 1000000, 2)} МВт`;
       if (Math.abs(number) >= 1000) return `${round(number / 1000, compact ? 1 : 2)} кВт`;
       return `${round(number, compact ? 0 : 1)} Вт`;
     }
+    if (key === "soc") return `${round(number, 0)} %`;
     if (key === "current") return `${round(number, compact ? 1 : 2)} A`;
     if (key === "voltage") return `${round(number, 1)} В`;
     if (key === "energy") return `${round(number, 2)} кВт·ч`;
@@ -987,8 +1006,29 @@ class ElectricalNetworkPanel extends HTMLElement {
     };
   }
 
+  _nodeEntityKeys(node) {
+    return NODE_ENTITY_KEYS[node?.type] || ["state", "power", "current", "voltage", "energy", "frequency", "temperature"];
+  }
+
   _primaryEntity(node) {
-    return node.entities?.state || node.entities?.power || node.entities?.current || "";
+    return node.entities?.state || node.entities?.power || node.entities?.output_power || node.entities?.current || "";
+  }
+
+  _isPassiveProtection(node) {
+    return ["breaker", "rcd"].includes(node?.type) && !this._nodeEntityKeys(node).some((key) => node.entities?.[key]);
+  }
+
+  _displayMetric(node, key) {
+    const direct = this._metric(node, key);
+    if (direct != null) return direct;
+    if (key === "power" && ["breaker", "rcd", "board", "junction"].includes(node?.type)) return this._subtreePower(node.id);
+    return null;
+  }
+
+  _cardMetricKeys(node) {
+    if (node.type === "battery") return ["soc", "power", "voltage"];
+    if (node.type === "inverter") return ["input_power", "output_power", "voltage"];
+    return ["current", "power", "voltage"];
   }
 
   _nodeTypeLabel(node) {
@@ -1045,7 +1085,13 @@ class ElectricalNetworkPanel extends HTMLElement {
     }
 
     const entity = this._primaryEntity(node);
+    const passiveProtection = this._isPassiveProtection(node);
+    const entityText = passiveProtection
+      ? (status.flowing ? "Механический · нагрузка по цепи" : "Механический автомат")
+      : node.type === "ground" ? "Точка защитного заземления" : (entity || "Сущность не связана");
     const nominal = node.nominal ? `<span class="nominal">${escapeHtml(node.nominal)}</span>` : "";
+    const metricLabels = { current: "I", power: "P", voltage: "U", soc: "SoC", input_power: "IN", output_power: "OUT" };
+    const metricRows = this._cardMetricKeys(node).map((key) => `<span class="k">${metricLabels[key] || key}</span><span class="v" data-node-live="${escapeHtml(node.id)}:${key}">${escapeHtml(this._formatMetric(this._displayMetric(node, key), key, true))}</span>`).join("");
     return `
       <div class="${classes}" data-node-id="${escapeHtml(node.id)}" style="${style}" title="${escapeHtml(node.description || node.name)}">
         <div class="node-content">
@@ -1053,13 +1099,9 @@ class ElectricalNetworkPanel extends HTMLElement {
           <div class="node-info">
             <div class="node-title-row"><div class="node-name">${escapeHtml(node.name)}</div>${nominal}</div>
             <div class="node-kind">${escapeHtml(this._nodeTypeLabel(node))}${node.phase && node.phase !== "all" ? ` · ${escapeHtml(node.phase)}` : ""}</div>
-            <div class="entity-chip" title="${escapeHtml(entity || "Сущность не связана")}">${escapeHtml(entity || "Сущность не связана")}</div>
+            <div class="entity-chip" title="${escapeHtml(entityText)}">${escapeHtml(entityText)}</div>
           </div>
-          <div class="metric-grid">
-            <span class="k">I</span><span class="v" data-node-live="${escapeHtml(node.id)}:current">${escapeHtml(this._formatMetric(this._metric(node, "current"), "current", true))}</span>
-            <span class="k">P</span><span class="v" data-node-live="${escapeHtml(node.id)}:power">${escapeHtml(this._formatMetric(this._metric(node, "power"), "power", true))}</span>
-            <span class="k">U</span><span class="v" data-node-live="${escapeHtml(node.id)}:voltage">${escapeHtml(this._formatMetric(this._metric(node, "voltage"), "voltage", true))}</span>
-          </div>
+          <div class="metric-grid">${metricRows}</div>
         </div>
         <span class="status-dot"></span>
         <span class="port left"></span><span class="port right"></span><span class="port top"></span><span class="port bottom"></span>
@@ -1193,15 +1235,17 @@ class ElectricalNetworkPanel extends HTMLElement {
         status.unavailable ? "unavailable" : "",
         selected ? "selected" : "",
       ].filter(Boolean).join(" ");
-      const duration = clamp(3.2 - Math.log10(Math.max(Math.abs(status.power), 1)) * 0.62, 0.65, 3.2);
+      // Speed rises with load; 10 kW and above is the fastest (~0.45 s/path).
+      const loadRatio = clamp(Math.abs(status.power) / 10000, 0, 1);
+      const duration = clamp(3.2 - 2.75 * Math.sqrt(loadRatio), 0.45, 3.2);
       const label = edge.label
         ? `<text class="edge-label" x="${round(geometry.labelX, 2)}" y="${round(geometry.labelY, 2)}">${escapeHtml(edge.label)}</text>`
         : "";
       return `
-        <g class="${classes}" data-edge-group="${escapeHtml(edge.id)}" style="--flow-duration:${round(duration, 2)}s">
+        <g class="${classes}" data-edge-group="${escapeHtml(edge.id)}">
           <path class="wire-glow" d="${geometry.path}"></path>
           <path class="wire-base" d="${geometry.path}"></path>
-          <path class="wire-dots" d="${geometry.path}"></path>
+          ${status.flowing ? `<circle class="wire-runner" r="5"><animateMotion dur="${round(duration, 2)}s" repeatCount="indefinite" path="${geometry.path}"></animateMotion></circle>` : ""}
           ${label}
           <path class="edge-hit" data-edge-id="${escapeHtml(edge.id)}" d="${geometry.path}"></path>
         </g>`;
@@ -1225,13 +1269,12 @@ class ElectricalNetworkPanel extends HTMLElement {
   }
 
   _renderLiveRows(node) {
-    return ["current", "power", "voltage", "energy", "frequency", "temperature"]
-      .map((key) => `
-        <div class="read-row">
-          <div class="read-key">${METRIC_LABELS[key]}</div>
-          <div class="read-value" data-inspector-live="${key}">${escapeHtml(this._formatMetric(this._metric(node, key), key))}</div>
-        </div>`)
-      .join("");
+    const keys = this._nodeEntityKeys(node).filter((key) => key !== "state");
+    return keys.map((key) => `
+      <div class="read-row">
+        <div class="read-key">${METRIC_LABELS[key] || key}</div>
+        <div class="read-value" data-inspector-live="${key}">${escapeHtml(this._formatMetric(this._displayMetric(node, key), key))}</div>
+      </div>`).join("") || '<div style="color:var(--en-muted);font-size:12px">Для этого узла телеметрия не требуется.</div>';
   }
 
   _entityEditor(node, key) {
@@ -1329,12 +1372,12 @@ class ElectricalNetworkPanel extends HTMLElement {
       ? `<div class="section">
           <h3 class="section-title">Связанные сущности Home Assistant</h3>
           <div class="form-grid">
-            ${ENTITY_KEYS.map((key) => this._entityEditor(node, key)).join("")}
+            ${this._nodeEntityKeys(node).map((key) => this._entityEditor(node, key)).join("")}
           </div>
         </div>`
       : `<div class="section">
           <h3 class="section-title">Связанные сущности</h3>
-          ${ENTITY_KEYS.filter((key) => node.entities?.[key]).map((key) => `
+          ${this._nodeEntityKeys(node).filter((key) => node.entities?.[key]).map((key) => `
             <div class="read-row">
               <div class="read-key">${METRIC_LABELS[key] || "Состояние"}</div>
               <button class="read-value" style="border:0;background:none;color:var(--en-accent);cursor:pointer;padding:0" data-action="show-entity" data-entity="${escapeHtml(node.entities[key])}">${escapeHtml(node.entities[key])}</button>
@@ -1822,6 +1865,10 @@ class ElectricalNetworkPanel extends HTMLElement {
       load: { name: `Потребитель ${typeCount}`, nominal: "", phase: "L1" },
       meter: { name: `Счётчик ${typeCount}`, nominal: "", phase: "all" },
       junction: { name: `Соединение ${typeCount}`, nominal: "", phase: "all" },
+      inverter: { name: `Инвертор ${typeCount}`, nominal: "", phase: "all" },
+      solar: { name: `Солнечные панели ${typeCount}`, nominal: "", phase: "DC" },
+      battery: { name: `Аккумулятор ${typeCount}`, nominal: "", phase: "DC" },
+      ground: { name: `Заземление ${typeCount}`, nominal: "", phase: "all" },
     }[type];
 
     const node = {
@@ -1860,7 +1907,7 @@ class ElectricalNetworkPanel extends HTMLElement {
     this._openModal(
       "Добавить узел",
       `<div class="node-type-grid">${options}</div>
-       <div class="warning-box" style="margin-top:14px">Щит — контейнер для аппаратов. Автомат, УЗО и потребитель можно связать с сущностями состояния, мощности, тока, напряжения и энергии.</div>`
+       <div class="warning-box" style="margin-top:14px">Щит — контейнер для аппаратов. Механический автомат может работать без сущностей: нагрузка определяется по downstream-цепи. Инвертор, солнечные панели и аккумулятор имеют специализированные поля. Заземление — топологическая точка без обязательной сущности.</div>`
     );
   }
 

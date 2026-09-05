@@ -12,8 +12,8 @@ COMPONENT = ROOT / "custom_components/electrical_network"
 
 
 def test_manifest_and_hacs_metadata_are_consistent() -> None:
-    manifest = json.loads((COMPONENT / "manifest.json").read_text())
-    hacs = json.loads((ROOT / "hacs.json").read_text())
+    manifest = json.loads((COMPONENT / "manifest.json").read_text(encoding="utf-8"))
+    hacs = json.loads((ROOT / "hacs.json").read_text(encoding="utf-8"))
 
     assert manifest["domain"] == "electrical_network"
     assert re.fullmatch(r"\d+\.\d+\.\d+", manifest["version"])
@@ -31,8 +31,8 @@ def test_manifest_and_hacs_metadata_are_consistent() -> None:
 
 
 def test_frontend_version_matches_manifest_and_has_no_remote_runtime_dependency() -> None:
-    manifest = json.loads((COMPONENT / "manifest.json").read_text())
-    source = (COMPONENT / "frontend/electrical-network-panel.js").read_text()
+    manifest = json.loads((COMPONENT / "manifest.json").read_text(encoding="utf-8"))
+    source = (COMPONENT / "frontend/electrical-network-panel.js").read_text(encoding="utf-8")
 
     assert f'const ELECTRICAL_NETWORK_VERSION = "{manifest["version"]}";' in source
     assert "https://" not in source
@@ -44,7 +44,7 @@ def test_frontend_version_matches_manifest_and_has_no_remote_runtime_dependency(
 
 def test_translations_have_required_config_flow_keys() -> None:
     for path in [COMPONENT / "strings.json", *sorted((COMPONENT / "translations").glob("*.json"))]:
-        data = json.loads(path.read_text())
+        data = json.loads(path.read_text(encoding="utf-8"))
         user = data["config"]["step"]["user"]
         options = data["options"]["step"]["init"]
         for section in (user, options):
@@ -53,7 +53,7 @@ def test_translations_have_required_config_flow_keys() -> None:
 
 def test_example_document_matches_server_schema() -> None:
     schema = runpy.run_path(str(COMPONENT / "schema.py"))
-    document = json.loads((ROOT / "examples/demo_diagram.json").read_text())
+    document = json.loads((ROOT / "examples/demo_diagram.json").read_text(encoding="utf-8"))
     normalized = schema["normalize_diagram"](document)
 
     assert normalized["title"] == document["title"]

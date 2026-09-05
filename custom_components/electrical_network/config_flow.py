@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import voluptuous as vol
@@ -20,8 +21,6 @@ from .const import (
     DEFAULT_URL_PATH,
     DOMAIN,
 )
-
-_URL_PATH = vol.All(cv.string, vol.Match(r"^[a-z0-9][a-z0-9_-]*$"))
 
 
 def _schema(values: dict[str, Any] | None = None) -> vol.Schema:
@@ -51,7 +50,7 @@ def _schema(values: dict[str, Any] | None = None) -> vol.Schema:
                     CONF_URL_PATH,
                     DEFAULT_URL_PATH,
                 ),
-            ): _URL_PATH,
+            ): cv.string,
         }
     )
 
@@ -74,19 +73,27 @@ class ElectricalNetworkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Create the single local configuration entry."""
-
+    
         if self._async_current_entries():
             return self.async_abort(reason="already_configured")
-
+    
+        errors = {}
+    
         if user_input is not None:
-            return self.async_create_entry(
-                title=user_input[CONF_PANEL_TITLE],
-                data=user_input,
-            )
-
+            url_path = user_input[CONF_URL_PATH]
+    
+            if not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", url_path):
+                errors[CONF_URL_PATH] = "invalid_url_path"
+            else:
+                return self.async_create_entry(
+                    title=user_input[CONF_PANEL_TITLE],
+                    data=user_input,
+                )
+    
         return self.async_show_form(
             step_id="user",
-            data_schema=_schema(),
+            data_schema=_schema(user_input),
+            errors=errors,
         )
 
 

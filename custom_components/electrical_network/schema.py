@@ -8,7 +8,7 @@ import math
 import re
 from typing import Any
 
-NODE_TYPES = frozenset({"source", "breaker", "rcd", "board", "load", "meter", "junction"})
+NODE_TYPES = frozenset({"source", "breaker", "rcd", "board", "load", "meter", "junction", "inverter", "solar", "battery", "ground"})
 PORTS = frozenset({"auto", "left", "right", "top", "bottom"})
 PHASES = frozenset({"all", "L1", "L2", "L3", "N", "DC", ""})
 ENTITY_KEYS = (
@@ -19,6 +19,11 @@ ENTITY_KEYS = (
     "energy",
     "frequency",
     "temperature",
+    "soc",
+    "input_power",
+    "output_power",
+    "charge_power",
+    "discharge_power",
 )
 MAX_NODES = 500
 MAX_EDGES = 1000
@@ -104,6 +109,10 @@ def _default_icon(node_type: str) -> str:
         "load": "mdi:power-plug",
         "meter": "mdi:meter-electric",
         "junction": "mdi:source-branch",
+        "inverter": "mdi:solar-power-variant",
+        "solar": "mdi:solar-panel-large",
+        "battery": "mdi:battery-charging-high",
+        "ground": "mdi:ground-wire",
     }[node_type]
 
 
