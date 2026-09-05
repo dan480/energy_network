@@ -5,8 +5,6 @@
 - [IMP] Single animated power-flow point; speed scales with load up to 10 kW.
 - [IMP] Entity-less mechanical breakers inherit downstream load state.
 
-# Changelog
-
 ## 0.1.0 — 2026-09-03
 
 - Добавлена полноэкранная панель электросети в боковое меню Home Assistant.
