@@ -1,4 +1,4 @@
-const ELECTRICAL_NETWORK_VERSION = "0.3.0";
+const ELECTRICAL_NETWORK_VERSION = "0.3.1";
 
 // [electrical-network-energy-v2] Energy/storage and PE nodes.
 const NODE_TYPE_META = {

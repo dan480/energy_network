@@ -4,7 +4,7 @@ from typing import Final
 
 DOMAIN: Final = "electrical_network"
 NAME: Final = "Electrical Network Designer"
-VERSION: Final = "0.1.0"
+VERSION: Final = "0.3.1"
 
 CONF_PANEL_TITLE: Final = "panel_title"
 CONF_SIDEBAR_ICON: Final = "sidebar_icon"

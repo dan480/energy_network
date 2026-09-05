@@ -35,6 +35,8 @@ def test_frontend_version_matches_manifest_and_has_no_remote_runtime_dependency(
     source = (COMPONENT / "frontend/electrical-network-panel.js").read_text(encoding="utf-8")
 
     assert f'const ELECTRICAL_NETWORK_VERSION = "{manifest["version"]}";' in source
+    const_source = (COMPONENT / "const.py").read_text(encoding="utf-8")
+    assert f'VERSION: Final = "{manifest["version"]}"' in const_source
     assert "https://" not in source
     assert source.count("http://") == 1
     assert 'xmlns="http://www.w3.org/2000/svg"' in source
